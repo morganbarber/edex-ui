@@ -456,6 +456,22 @@ class Terminal {
                 }
             });
             this.wss.on("connection", ws => {
+                const origin = req.headers.origin;
+                const allowedOrigins = [
+                    'file://',
+                    'null', // Often sent by browsers for local files
+                    // Add any other trusted origins if eDEX-UI is served over http
+                    'http://localhost:3000'
+                ];
+
+                // A simple check for file:// URLs or null origin
+                // For file://, the origin header might not be standard across all browsers
+                // a more robust check might be needed if you notice issues.
+                if (allowedOrigins.indexOf(origin) === -1 && origin !== undefined) {
+                    console.log(`[eDEX-UI] Denying connection from untrusted origin: ${origin}`);
+                    ws.close();
+                    return;
+                }
                 this.onopened(this.tty._pid);
                 ws.on("close", (code, reason) => {
                     this.ondisconnected(code, reason);
